@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Meeting Scheduler</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg: #09090b;
+            --surface: #111113;
+            --surface2: #1a1a1e;
+            --border: #2a2a30;
+            --border2: #3a3a42;
+            --text: #f0f0f2;
+            --muted: #6b6b78;
+            --accent: #7c6dfa;
+            --accent2: #a78bfa;
+            --green: #34d399;
+            --red: #f87171;
+            --amber: #fbbf24;
+            --mono: 'DM Mono', monospace;
+            --head: 'Syne', sans-serif;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--mono);
+            font-size: 14px;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* ── Header ── */
+        header {
+            border-bottom: 1px solid var(--border);
+            padding: 20px 40px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo-mark {
+            width: 36px;
+            height: 36px;
+            border: 1.5px solid var(--accent);
+            border-radius: 8px;
+            display: grid;
+            place-items: center;
+            font-family: var(--head);
+            font-weight: 800;
+            font-size: 16px;
+            color: var(--accent);
+            letter-spacing: -1px;
+            flex-shrink: 0;
+        }
+
+        .header-text h1 {
+            font-family: var(--head);
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            color: var(--text);
+        }
+
+        .header-text p {
+            font-size: 11px;
+            color: var(--muted);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .header-badge {
+            margin-left: auto;
+            font-size: 10px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            background: rgba(124, 109, 250, 0.12);
+            color: var(--accent2);
+            border: 1px solid rgba(124, 109, 250, 0.25);
+            border-radius: 4px;
+            padding: 4px 10px;
+        }
+
+        /* ── Layout ── */
+        .app {
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 40px 24px 80px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+            align-items: start;
+        }
+
+        @media (max-width: 700px) {
+            .app {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ── Panel ── */
+        .panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .panel-head {
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .panel-title {
+            font-family: var(--head);
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        .panel-body {
+            padding: 18px;
+        }
+
+        /* ── Inputs ── */
+        label {
+            display: block;
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+
+        input[type=text],
+        input[type=number] {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-family: var(--mono);
+            font-size: 13px;
+            padding: 8px 12px;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+
+        input[type=text]:focus,
+        input[type=number]:focus {
+            border-color: var(--accent);
+        }
+
+        input::placeholder {
+            color: var(--muted);
+        }
+
+        /* ── Participant cards ── */
+        #participants {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .p-card {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 14px;
+            animation: slideIn 0.2s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .p-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .p-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            display: grid;
+            place-items: center;
+            font-family: var(--head);
+            font-weight: 700;
+            font-size: 11px;
+            flex-shrink: 0;
+        }
+
+        .p-name-input {
+            flex: 1;
+        }
+
+        .btn-remove {
+            background: none;
+            border: 1px solid transparent;
+            color: var(--muted);
+            font-family: var(--mono);
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s;
+            letter-spacing: 0.04em;
+        }
+
+        .btn-remove:hover {
+            border-color: var(--red);
+            color: var(--red);
+        }
+
+        /* ── Windows ── */
+        .windows-label {
+            font-size: 10px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+
+        .windows-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 8px;
+        }
+
+        .w-pill {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(124, 109, 250, 0.1);
+            border: 1px solid rgba(124, 109, 250, 0.2);
+            border-radius: 4px;
+            padding: 3px 8px;
+            font-size: 12px;
+            color: var(--accent2);
+            font-family: var(--mono);
+        }
+
+        .w-pill .x {
+            cursor: pointer;
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1;
+            transition: color 0.12s;
+        }
+
+        .w-pill .x:hover {
+            color: var(--red);
+        }
+
+        .add-window-row {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .add-window-row input {
+            flex: 1;
+        }
+
+        .btn-add-w {
+            background: none;
+            border: 1px solid var(--border2);
+            border-radius: 5px;
+            color: var(--muted);
+            font-family: var(--mono);
+            font-size: 11px;
+            padding: 7px 12px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.15s;
+        }
+
+        .btn-add-w:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .w-err {
+            font-size: 11px;
+            color: var(--red);
+            margin-top: 4px;
+        }
+
+        /* ── Buttons ── */
+        .btn-add-p {
+            width: 100%;
+            background: none;
+            border: 1px dashed var(--border2);
+            border-radius: 7px;
+            color: var(--muted);
+            font-family: var(--mono);
+            font-size: 12px;
+            padding: 9px;
+            cursor: pointer;
+            transition: all 0.15s;
+            letter-spacing: 0.04em;
+        }
+
+        .btn-add-p:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .duration-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 14px 0;
+        }
+
+        .duration-row label {
+            margin: 0;
+            white-space: nowrap;
+        }
+
+        .duration-row input {
+            flex: 1;
+        }
+
+        .btn-run {
+            width: 100%;
+            background: var(--accent);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-family: var(--head);
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            padding: 12px;
+            cursor: pointer;
+            transition: opacity 0.15s, transform 0.12s;
+        }
+
+        .btn-run:hover {
+            opacity: 0.88;
+        }
+
+        .btn-run:active {
+            transform: scale(0.98);
+        }
+
+        .btn-run:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .global-err {
+            font-size: 12px;
+            color: var(--red);
+            margin-top: 10px;
+            min-height: 18px;
+        }
+
+        /* ── Result panel ── */
+        #result-panel {
+            display: none;
+        }
+
+        .best-time {
+            font-family: var(--head);
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+
+        .best-sub {
+            font-size: 12px;
+            color: var(--muted);
+            margin-bottom: 16px;
+            letter-spacing: 0.04em;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 18px;
+        }
+
+        .stat-box {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 7px;
+            padding: 10px 12px;
+        }
+
+        .stat-val {
+            font-family: var(--head);
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .stat-lbl {
+            font-size: 10px;
+            color: var(--muted);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            margin-top: 2px;
+        }
+
+        /* ── Attendance ── */
+        .attend-list {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-bottom: 18px;
+        }
+
+        .attend-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            border-radius: 5px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            font-size: 12px;
+        }
+
+        .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* ── Timeline ── */
+        .tl-section {
+            margin-bottom: 18px;
+        }
+
+        .tl-label {
+            font-size: 10px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 10px;
+        }
+
+        .tl-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .tl-name {
+            font-size: 11px;
+            color: var(--muted);
+            width: 68px;
+            text-align: right;
+            flex-shrink: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .tl-track {
+            flex: 1;
+            height: 12px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tl-seg {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            border-radius: 2px;
+            opacity: 0.5;
+        }
+
+        .tl-best-overlay {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            background: rgba(52, 211, 153, 0.18);
+            border-left: 1.5px solid var(--green);
+            border-right: 1.5px solid var(--green);
+        }
+
+        .tl-axis {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            color: var(--muted);
+            padding-left: 76px;
+            margin-top: 4px;
+        }
+
+        /* ── Alternatives ── */
+        .alt-label {
+            font-size: 10px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        .alt-list {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .alt-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 7px 10px;
+            border-radius: 5px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            font-size: 12px;
+            cursor: default;
+        }
+
+        .alt-time {
+            color: var(--text);
+            font-family: var(--mono);
+        }
+
+        .alt-score {
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        /* ── Algo legend ── */
+        .algo-box {
+            margin-top: 18px;
+            padding: 12px 14px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 7px;
+            font-size: 11px;
+            color: var(--muted);
+            line-height: 1.7;
+        }
+
+        .algo-box span {
+            color: var(--accent2);
+        }
+
+        /* ── Loader ── */
+        .loader {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            vertical-align: middle;
+            margin-right: 6px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="logo-mark">AI</div>
+        <div class="header-text">
+            <h1>Smart Meeting Scheduler</h1>
+            <p>CSP + State Space Search · Heuristic Scoring</p>
+        </div>
+        <div class="header-badge">v2.0</div>
+    </header>
+
+    <div class="app">
+
+        <!-- ── Left: Input Panel ── -->
+        <div class="panel">
+            <div class="panel-head">
+                <span class="panel-title">Participants & Constraints</span>
+            </div>
+            <div class="panel-body">
+                <div id="participants"></div>
+                <button class="btn-add-p" onclick="addParticipant()">+ add participant</button>
+
+                <div class="duration-row" style="margin-top:16px;">
+                    <label>Duration (hrs)</label>
+                    <input type="number" id="duration" value="1" min="0.5" max="8" step="0.5" style="max-width:80px;">
+                </div>
+
+                <button class="btn-run" id="run-btn" onclick="runScheduler()">Find optimal slot</button>
+                <div class="global-err" id="g-err"></div>
+            </div>
+        </div>
+
+        <!-- ── Right: Result Panel ── -->
+        <div id="result-panel" class="panel">
+            <div class="panel-head">
+                <span class="panel-title">Optimal Meeting Slot</span>
+            </div>
+            <div class="panel-body" id="result-body"></div>
+        </div>
+
+    </div>
+
+    <script>
+        // ── State ──
+        let participants = [];
+        let pidCounter = 0;
+        const PALETTES = [
+            { bg: 'rgba(124,109,250,0.18)', dot: '#7c6dfa' },
+            { bg: 'rgba(52,211,153,0.18)', dot: '#34d399' },
+            { bg: 'rgba(251,191,36,0.18)', dot: '#fbbf24' },
+            { bg: 'rgba(248,113,113,0.18)', dot: '#f87171' },
+            { bg: 'rgba(96,165,250,0.18)', dot: '#60a5fa' },
+            { bg: 'rgba(196,181,253,0.18)', dot: '#c4b5fd' },
+        ];
+
+        function initials(name) {
+            return name.trim().split(/\s+/).map(w => w[0] || '').join('').toUpperCase().slice(0, 2) || '?';
+        }
+
+        function palOf(i) { return PALETTES[i % PALETTES.length]; }
+
+        // ── Add/remove participant ──
+        function addParticipant(name = '', windows = []) {
+            const id = pidCounter++;
+            participants.push({ id, name, windows: [...windows] });
+            renderParticipants();
+        }
+
+        function removeParticipant(id) {
+            participants = participants.filter(p => p.id !== id);
+            renderParticipants();
+        }
+
+        function updateName(id, val) {
+            const p = participants.find(p => p.id === id);
+            if (p) { p.name = val; refreshAvatar(id); }
+        }
+
+        function refreshAvatar(id) {
+            const idx = participants.findIndex(p => p.id === id);
+            const av = document.getElementById('av-' + id);
+            if (av) av.textContent = initials(participants[idx]?.name || '?');
+        }
+
+        // ── Add/remove window ──
+        function addWindow(id) {
+            const p = participants.find(p => p.id === id);
+            if (!p) return;
+            const s = parseFloat(document.getElementById(`ws-${id}`).value);
+            const e = parseFloat(document.getElementById(`we-${id}`).value);
+            const errEl = document.getElementById(`we-err-${id}`);
+            if (isNaN(s) || isNaN(e) || s < 0 || e > 24 || s >= e) {
+                errEl.textContent = 'Invalid: need 0 ≤ start < end ≤ 24';
+                return;
+            }
+            errEl.textContent = '';
+            p.windows.push([s, e]);
+            renderParticipants();
+        }
+
+        function removeWindow(id, idx) {
+            const p = participants.find(p => p.id === id);
+            if (p) { p.windows.splice(idx, 1); renderParticipants(); }
+        }
+
+        // ── Render ──
+        function renderParticipants() {
+            const el = document.getElementById('participants');
+            el.innerHTML = participants.map((p, pi) => {
+                const pal = palOf(pi);
+                const pills = p.windows.map((w, wi) =>
+                    `<div class="w-pill">${fmt(w[0])}–${fmt(w[1])}<span class="x" onclick="removeWindow(${p.id},${wi})">×</span></div>`
+                ).join('');
+                return `
+    <div class="p-card">
+      <div class="p-header">
+        <div class="p-avatar" id="av-${p.id}" style="background:${pal.bg};color:${pal.dot};">${initials(p.name || '?')}</div>
+        <input class="p-name-input" type="text" placeholder="Name" value="${escapeAttr(p.name)}" oninput="updateName(${p.id},this.value)">
+        <button class="btn-remove" onclick="removeParticipant(${p.id})">remove</button>
+      </div>
+      <div class="windows-label">Availability windows</div>
+      <div class="windows-list">${pills}</div>
+      <div class="add-window-row">
+        <input type="number" id="ws-${p.id}" placeholder="Start (0–23)" min="0" max="23" step="0.5">
+        <input type="number" id="we-${p.id}" placeholder="End (1–24)" min="0.5" max="24" step="0.5">
+        <button class="btn-add-w" onclick="addWindow(${p.id})">+ add</button>
+      </div>
+      <div class="w-err" id="we-err-${p.id}"></div>
+    </div>`;
+            }).join('');
+        }
+
+        function escapeAttr(s) { return (s || '').replace(/"/g, '&quot;'); }
+
+        function fmt(h) {
+            const hh = Math.floor(h), mm = Math.round((h - hh) * 60);
+            return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+        }
+
+        // ── Run Scheduler ──
+        async function runScheduler() {
+            document.getElementById('g-err').textContent = '';
+            if (participants.length === 0) { document.getElementById('g-err').textContent = 'Add at least one participant.'; return; }
+            const hasMissing = participants.some(p => p.windows.length === 0);
+            if (hasMissing) { document.getElementById('g-err').textContent = 'Every participant needs at least one availability window.'; return; }
+            const duration = parseFloat(document.getElementById('duration').value);
+            if (isNaN(duration) || duration <= 0) { document.getElementById('g-err').textContent = 'Enter a valid duration.'; return; }
+
+            const btn = document.getElementById('run-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loader"></span>Searching…';
+
+            const payload = {
+                duration,
+                participants: participants.map(p => ({
+                    name: p.name || 'Unnamed',
+                    windows: p.windows.map(([s, e]) => ({ start: s, end: e }))
+                }))
+            };
+
+            try {
+                const res = await fetch('/schedule', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data.error) { document.getElementById('g-err').textContent = data.error; return; }
+                renderResult(data);
+            } catch (e) {
+                document.getElementById('g-err').textContent = 'Could not reach server. Is Flask running?';
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Find optimal slot';
+            }
+        }
+
+        // ── Render Result ──
+        function renderResult(data) {
+            const { best, alternatives, schedules } = data;
+            const panel = document.getElementById('result-panel');
+            const body = document.getElementById('result-body');
+            panel.style.display = 'block';
+
+            const allNames = Object.keys(schedules);
+            const MIN = 0, MAX = 24, RANGE = MAX - MIN;
+
+            const toP = h => ((h - MIN) / RANGE * 100).toFixed(2);
+
+            // Timeline rows
+            const tlRows = allNames.map((name, ni) => {
+                const wins = schedules[name];
+                const pal = palOf(ni);
+                const segs = wins.map(w =>
+                    `<div class="tl-seg" style="left:${toP(w.start)}%;width:${toP(w.end - w.start + MIN)}%;background:${pal.dot};"></div>`
+                ).join('');
+                const bl = toP(best.start), bw = toP(best.end - best.start + MIN);
+                return `<div class="tl-row">
+      <div class="tl-name" title="${name}">${name}</div>
+      <div class="tl-track">${segs}<div class="tl-best-overlay" style="left:${bl}%;width:${bw}%;"></div></div>
+    </div>`;
+            }).join('');
+
+            // Attendance
+            const attendRows = allNames.map((name, ni) => {
+                const matched = best.matched.includes(name);
+                const pal = palOf(ni);
+                return `<div class="attend-row">
+      <div class="dot" style="background:${matched ? pal.dot : 'var(--muted)'};"></div>
+      <span style="flex:1;color:${matched ? 'var(--text)' : 'var(--muted)'}">${name}</span>
+      <span style="font-size:11px;color:${matched ? 'var(--green)' : 'var(--red)'};">${matched ? 'available' : 'unavailable'}</span>
+    </div>`;
+            }).join('');
+
+            // Alternatives
+            const altRows = alternatives.slice(0, 4).map(a =>
+                `<div class="alt-row">
+      <span class="alt-time">${fmt(a.start)} – ${fmt(a.end)}</span>
+      <span class="alt-score">${a.score}/${a.total} matched</span>
+    </div>`
+            ).join('');
+
+            body.innerHTML = `
+    <div class="best-time">${best.label}</div>
+    <div class="best-sub">Optimal slot · CSP heuristic score: ${best.score}/${best.total}</div>
+
+    <div class="stats-grid">
+      <div class="stat-box"><div class="stat-val">${best.score}/${best.total}</div><div class="stat-lbl">Matched</div></div>
+      <div class="stat-box"><div class="stat-val">${best.coverage}%</div><div class="stat-lbl">Coverage</div></div>
+      <div class="stat-box"><div class="stat-val">${best.end - best.start}h</div><div class="stat-lbl">Duration</div></div>
+    </div>
+
+    <div class="attend-list">${attendRows}</div>
+
+    <div class="tl-section">
+      <div class="tl-label">Availability timeline</div>
+      ${tlRows}
+      <div class="tl-axis"><span>0:00</span><span>6:00</span><span>12:00</span><span>18:00</span><span>24:00</span></div>
+    </div>
+
+    ${altRows ? `<div class="alt-label">Alternative slots</div><div class="alt-list">${altRows}</div>` : ''}
+
+  `;
+        }
+
+        // ── Init ──
+        addParticipant('Nithin', [[9, 12]]);
+        addParticipant('Harshith', [[10, 13]]);
+        addParticipant('Dhanush', [[10, 14]]);
+    </script>
+</body>
+
+</html>
